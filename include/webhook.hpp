@@ -37,12 +37,21 @@ public:
     int retry_after_ms() const;
 
     bool set_name(const std::string& name);
+    bool set_avatar_from_url(const std::string& image_url);
+    bool set_avatar_from_file(const std::string& file_path);
+
+    std::string get_name();
+
+    bool delete_webhook();
 
 private:
     std::string m_url;
     std::string m_proxy;
     std::string m_last_error;
     int m_retry_after_ms = 0;
+    bool patch_avatar(const std::string& base64_data, const std::string& mime_type);
+    bool fetch_url_to_string(const std::string& url, std::string& out);
+    std::string to_base64(const std::string& data);
 };
 
 } // namespace moon

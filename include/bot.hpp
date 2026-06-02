@@ -42,6 +42,7 @@ public:
 
     std::vector<Role> get_roles(const std::string& guild_id);
     bool delete_role(const std::string& guild_id, const std::string& role_id);
+    bool create_role(const std::string& guild_id, const std::string& role_name);
 
     std::vector<Member> get_members(const std::string& guild_id, const std::string& owner_id);
     bool ban_member(const std::string& guild_id, const std::string& user_id, const std::string& reason);

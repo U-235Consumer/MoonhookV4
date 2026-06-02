@@ -140,6 +140,17 @@ bool DiscordBot::delete_role(const std::string& guild_id, const std::string& rol
     return (code == 204 || code == 200);
 }
 
+bool DiscordBot::create_role(const std::string &guild_id, const std::string &role_name)
+{
+    nlohmann::json body;
+    body["name"] = role_name;
+    long code = 0;
+    api_request("POST", "/guilds/" + guild_id + "/roles", body.dump(), &code);
+    if (code == 200 || code == 201) return true;
+    m_last_error = "Failed to create role (HTTP " + std::to_string(code) + ")";
+    return false;
+}
+
 std::vector<DiscordBot::Member> DiscordBot::get_members(const std::string& guild_id, const std::string& owner_id) {
     std::vector<Member> result;
     std::string after = "";

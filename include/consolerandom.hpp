@@ -4,7 +4,7 @@
 
 #include <random>
 #include <vector>
-#include <include/ansi_terminal.hpp>
+#include <ansi_terminal.hpp>
 
 namespace ConsoleRandom
 {
@@ -110,7 +110,7 @@ R"(
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<int> distrib(0, ConsoleRandom::Banners.size());
+        std::uniform_int_distribution<int> distrib(0, ConsoleRandom::Banners.size() - 1);
         int randindex = distrib(gen);
         std::string& out = ConsoleRandom::Banners[randindex];
         return out;
@@ -120,7 +120,7 @@ R"(
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<int> distrib(0, ConsoleRandom::Gradients.size());
+        std::uniform_int_distribution<int> distrib(0, ConsoleRandom::Gradients.size() - 1);
         int randindex = distrib(gen);
         ansi::Gradient& out = ConsoleRandom::Gradients[randindex];
         return out;
@@ -130,7 +130,7 @@ R"(
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<int> distrib(0, ConsoleRandom::Gradients.size());
+        std::uniform_int_distribution<int> distrib(0, ConsoleRandom::RandomText.size() - 1);
         int randindex = distrib(gen);
         return ConsoleRandom::RandomText[randindex];
     }

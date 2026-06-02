@@ -4,6 +4,11 @@
 
 #include <functional>
 #include <console.hpp>
+#include <exception>
+
+struct RestartException : std::exception {
+    const char* what() const noexcept override { return "restart"; }
+};
 
 struct Option {
     std::string name;
