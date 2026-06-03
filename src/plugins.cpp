@@ -54,7 +54,7 @@ static int l_moonhook_option(lua_State* L)
 
     lua_pushvalue(L, 3);
     int ref = lua_ref(L, LUA_REGISTRYINDEX);
-    Option opt(name, [L, ref](ConsoleHelper* console)
+    Option opt(name, type, [L, ref](ConsoleHelper* console)
     {
         lua_getref(L, ref);
         if (lua_pcall(L, 0, 0, 0) != LUA_OK)
@@ -68,8 +68,8 @@ static int l_moonhook_option(lua_State* L)
     return 0;
 }
 
-static const luaL_Reg MoonhookLib[] = {
-    {"option", l_moonhook_option},
+const luaL_Reg PluginEnvironment::MoonhookLibrary[] = {
+    {"Option", l_moonhook_option},
     {nullptr, nullptr}
 };
 
@@ -78,7 +78,12 @@ static const luaL_Reg MoonhookLib[] = {
 void PluginEnvironment::install(lua_State *L)
 {
     lua_newtable(L);
-    luaL_register(L, nullptr, MoonhookLibrary);
+
+    for (const luaL_Reg* reg = MoonhookLibrary; reg->name != nullptr; reg++)
+    {
+        lua_pushcfunction(L, reg->func, reg->name);
+        lua_setfield(L, -2, reg->name);
+    }
 
     lua_pushinteger(L, option_index::MAIN_MENU_OPTION);
     lua_setfield(L, -2, "MAIN_MENU_OPTION");

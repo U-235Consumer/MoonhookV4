@@ -17,6 +17,7 @@
 namespace InternalOptions {
     inline Option Webhooks = {
         "Webhooks",
+        0,
         [](ConsoleHelper* console) -> void {
             std::string WEBHOOK_URL = console->input("Webhook URL: ");
 
@@ -45,6 +46,7 @@ namespace InternalOptions {
             std::vector<Option> sub_options = {
                 {
                     "Send Message",
+                    1,
                     [&hook](ConsoleHelper* c) -> void {
                         std::string TEXT = c->input("Text to send: ");
                         bool success = hook.send(TEXT);
@@ -58,6 +60,7 @@ namespace InternalOptions {
                 },
                 {
                     "Spam Webhook",
+                    1,
                     [&hook](ConsoleHelper* c) -> void {
                         std::string TEXT = c->input("Text to spam: ");
                         int DELAY = c->int_input("Delay (seconds): ");
@@ -92,6 +95,7 @@ namespace InternalOptions {
                 },
                 {
                     "Set Webhook Name",
+                    1,
                     [&hook](ConsoleHelper* c) -> void {
                         std::string NAME = c->input("New webhook name: ");
                         c->log("Attempting to set webhook name...");
@@ -106,6 +110,7 @@ namespace InternalOptions {
                 },
                 {
                     "Set Webhook Avatar",
+                    1,
                     [&hook](ConsoleHelper* c) -> void {
                         int file_or_url = c->int_input("Set from file or URL? (1-file, 2-url): ");
                         std::string source = c->input("Source (path or URL): ");
@@ -134,6 +139,7 @@ namespace InternalOptions {
                 },
                 {
                     "Delete Webhook",
+                    1,
                     [&hook, &WEBHOOK_NAME](ConsoleHelper* c) -> void {
                         std::string confirmation = c->input("Are you sure you want to delete \"" + WEBHOOK_NAME + "\"? (Y/n): ");
                         if (confirmation == "Y" || confirmation == "y")

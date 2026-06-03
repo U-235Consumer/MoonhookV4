@@ -3,6 +3,7 @@
 #include <iostream>
 #include <option.hpp>
 #include <lua.h>
+#include <lualib.h>
 
 struct MoonhookPlugin
 {

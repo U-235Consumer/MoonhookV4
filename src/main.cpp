@@ -25,9 +25,26 @@ const std::vector<std::string> PluginExtensions = {
 };
 std::vector<MoonhookPlugin> UserPlugins = {};
 
+const char* LUA_blocked[] = {
+    "load", "loadstring", "dofile", "loadfile",
+    "require", "collectgarbage", "newproxy", nullptr
+};
+
 int main()
 {
     std::filesystem::create_directories(PluginsDir);
+
+    lua_State* L = luaL_newstate();
+    luaopen_base(L);
+    luaopen_math(L);
+    luaopen_string(L);
+    luaopen_table(L);
+
+    for (int i = 0; LUA_blocked[i] != nullptr; i++)
+    {
+        lua_pushnil(L);
+        lua_setglobal(L, LUA_blocked[i]);
+    }
 
     ansi::enableANSI();
     if (!ansi::supportsColor())
@@ -76,8 +93,7 @@ int main()
     if (!UserPlugins.empty())
     {
         console.log("Loading plugins...");
-        
-        lua_State* L = luaL_newstate();
+
         PluginEnvironment::install(L);
 
         for (MoonhookPlugin& plugin : UserPlugins)
@@ -86,6 +102,7 @@ int main()
             if (result.empty())
             {
                 console.error("Plugin compile error: " + plugin.last_error());
+                ansi::pause();
                 continue;
             }
 
@@ -93,6 +110,7 @@ int main()
             {
                 console.error("Plugin load error: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
+                ansi::pause();
                 continue;
             }
 
@@ -100,14 +118,15 @@ int main()
             {
                 console.error("Plugin runtime error: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
+                ansi::pause();
                 continue;
             }
+
+            console.log("Plugin loaded successfully.");
         }
 
         plugin_opts = Registry::Get().GetOptions();
         console.log("Loaded " + std::to_string(plugin_opts.size()) + " plugin options.");
-        
-        lua_close(L);
     }
 
     while (true) 
@@ -124,6 +143,11 @@ int main()
             InternalOptions::Webhooks,
             InternalOptions::Bots
         };
+
+        for (Option& op : Registry::Get().GetOptions())
+        {
+            if (op.type == 0) main_menu_options.push_back(op);
+        }
 
         for (size_t i = 0; i < main_menu_options.size(); i++)
         {
@@ -179,5 +203,6 @@ int main()
         }
     }
 
+    lua_close(L);
     return 0;
 }

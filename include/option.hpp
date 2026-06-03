@@ -12,10 +12,11 @@ struct RestartException : std::exception {
 
 struct Option {
     std::string name;
+    int type; // 0 - main menu, 1 - webhooks, 2 - bots
     std::function<void(ConsoleHelper*)> action;
 
-    Option(const std::string& name, std::function<void(ConsoleHelper*)> action)
-        : name(name), action(action) {}
+    Option(const std::string& name, int type, std::function<void(ConsoleHelper*)> action)
+        : name(name), action(action), type(type) {}
 
     void run(ConsoleHelper* console) {
         action(console);

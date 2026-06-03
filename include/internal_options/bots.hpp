@@ -18,6 +18,7 @@
 namespace InternalOptions {
     inline Option Bots = {
         "Bots",
+        0,
         [](ConsoleHelper* console) -> void {
             std::string BOT_TOKEN = console->input("Bot token: ");
             std::string GUILD_ID = console->input("Guild ID: ");
@@ -47,6 +48,7 @@ namespace InternalOptions {
             std::vector<Option> sub_options = {
                 {
                     "Delete All Channels",
+                    2,
                     [&bot, &GUILD_NAME, &GUILD_ID](ConsoleHelper* c) -> void {
                         std::string confirmation = c->input("Are you sure you want to delete all channels in '"+GUILD_NAME+"'? (Y/n): ");
                         if (confirmation == "Y" || confirmation == "y")
@@ -83,6 +85,7 @@ namespace InternalOptions {
                 },
                 {
                     "Spam Create Channels",
+                    2,
                     [&bot, &GUILD_ID](ConsoleHelper* c) -> void {
                         std::string channel_name = c->input("Name of channels to create: ");
                         int amount = c->int_input("Amount of channels to create: ");
@@ -116,6 +119,7 @@ namespace InternalOptions {
                 },
                 {
                     "Delete All Roles",
+                    2,
                     [&bot, &GUILD_ID](ConsoleHelper* c) -> void {
                         std::string confirmation = c->input("Are you sure you want to delete all roles? (Y/n): ");
                         if (confirmation == "Y" | confirmation == "y")
@@ -150,6 +154,7 @@ namespace InternalOptions {
                 },
                 {
                     "Role Spam",
+                    2,
                     [&bot, &GUILD_ID](ConsoleHelper* c) -> void {
                         std::string role_name = c->input("Name of roles to create: ");
                         int role_amount = c->int_input("Amount of roles to create: ");
@@ -177,6 +182,7 @@ namespace InternalOptions {
                 },
                 {
                     "Message Spam",
+                    2,
                     [&bot, &GUILD_ID](ConsoleHelper* c) -> void {
                         std::string msg_content = c->input("Message to spam: ");
                         std::string hook_name = c->input("Webhook names: ");
@@ -240,6 +246,7 @@ namespace InternalOptions {
                 },
                 {
                     "Ban Everyone",
+                    2,
                     [&bot, &GUILD_ID](ConsoleHelper* c) -> void {
                         std::string reason = c->input("Reason to ban: ");
                         std::string confirmation = c->input("Are you sure you want to ban everyone? (Y/n): ");
@@ -275,6 +282,7 @@ namespace InternalOptions {
                 },
                 {
                     "⚠️ Full Server Nuke",
+                    2,
                     [&bot, &GUILD_ID](ConsoleHelper* c) -> void {
                         c->log("⚠️ This option will delete and spam roles, channels, spam messages in every channel and basically destroy the entire server.");
                         std::string msgcontent = c->input("Text to spam: ");
