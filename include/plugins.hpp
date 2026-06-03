@@ -27,5 +27,6 @@ private:
 namespace PluginEnvironment
 {
     extern const luaL_Reg MoonhookLibrary[];
+    extern const luaL_Reg ConsoleLibrary[];
     void install(lua_State* L);
 };

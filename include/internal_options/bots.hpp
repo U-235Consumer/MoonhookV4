@@ -14,6 +14,7 @@
 
 #include <webhook.hpp>
 #include <bot.hpp>
+#include <pluginregistry.hpp>
 
 namespace InternalOptions {
     inline Option Bots = {
@@ -22,6 +23,8 @@ namespace InternalOptions {
         [](ConsoleHelper* console) -> void {
             std::string BOT_TOKEN = console->input("Bot token: ");
             std::string GUILD_ID = console->input("Guild ID: ");
+            OptionContext::bot_token = BOT_TOKEN;
+            OptionContext::bot_guild = GUILD_ID;
 
             console->log("Initializing bot...");
             moon::DiscordBot bot(BOT_TOKEN);
@@ -456,11 +459,17 @@ namespace InternalOptions {
                     }
                 }
             };
+
+            for (Option& op : Registry::Get().GetOptions())
+            {
+                if (op.type == 2) sub_options.push_back(op);
+            }
 //------------------------------------------------------------------------------------------------//
 
             while (true)
             {
                 ansi::clearConsole();
+                ansi::set_title("MoonHook V4 - Bots");
                 ansi::print_gradient_ascii(BotsBanner, console->gmain);
                 std::cout << "Guild Name: " << GUILD_NAME << "\n\n";
 

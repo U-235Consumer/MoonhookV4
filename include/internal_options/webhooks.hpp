@@ -13,6 +13,7 @@
 #include <ansi_terminal.hpp>
 
 #include <webhook.hpp>
+#include <pluginregistry.hpp>
 
 namespace InternalOptions {
     inline Option Webhooks = {
@@ -20,6 +21,7 @@ namespace InternalOptions {
         0,
         [](ConsoleHelper* console) -> void {
             std::string WEBHOOK_URL = console->input("Webhook URL: ");
+            OptionContext::webhook_url = WEBHOOK_URL;
 
             console->log("Initializing webhook...");
             moon::Webhook hook(WEBHOOK_URL);
@@ -161,11 +163,17 @@ namespace InternalOptions {
                     }
                 }
             };
+
+            for (Option& op : Registry::Get().GetOptions())
+            {
+                if (op.type == 1) sub_options.push_back(op);
+            }
 //------------------------------------------------------------------------------------------------//
 
             while (true)
             {
                 ansi::clearConsole();
+                ansi::set_title("MoonHook V4 - Webhooks");
                 ansi::print_gradient_ascii(WebhooksBanner, console->gmain);
                 std::cout << "Webhook: " << WEBHOOK_NAME << "\n\n";
 

@@ -10,6 +10,12 @@ struct RestartException : std::exception {
     const char* what() const noexcept override { return "restart"; }
 };
 
+struct OptionContext {
+    inline static std::string webhook_url;
+    inline static std::string bot_token;
+    inline static std::string bot_guild;
+};
+
 struct Option {
     std::string name;
     int type; // 0 - main menu, 1 - webhooks, 2 - bots

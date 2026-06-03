@@ -132,6 +132,7 @@ int main()
     while (true) 
     {
         ansi::clearConsole();
+        ansi::set_title("MoonHook V4");
         console.printbanner();
         
         std::cout << "----------------------------------------------------------------\n";

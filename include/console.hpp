@@ -7,34 +7,23 @@
 
 class ConsoleHelper {
 public:
-    const ansi::Gradient& gmain;
-    const std::string& banner;
+    ansi::Gradient gmain;
+    std::string banner;
 
     ConsoleHelper(const ansi::Gradient& gradient, const std::string& banner)
         : gmain(gradient), banner(banner) {}
 
-    inline void log(std::string text)
-    {
-        auto now = std::chrono::system_clock::now();
-        std::time_t t = std::chrono::system_clock::to_time_t(now);
-        std::tm* tm = std::localtime(&t);
-        char buf[6];
-        std::strftime(buf, sizeof(buf), "%H:%M", tm);
+    void set_gradient(const ansi::Gradient& gradient) { gmain = gradient; }
+    void set_banner(const std::string& new_banner) { banner = new_banner; }
 
-        const std::string& TIME = std::string(buf);
-        std::cout << gmain.start << "(" << TIME << ")" << "[MoonHook]: " << ansi::ColorReset() << text << std::endl;
+    inline void log(const std::string& text)
+    {
+        std::cout << gmain.start << "(" << get_timestamp() << ")[MoonHook]: " << ansi::ColorReset() << text << std::endl;
     }
 
-    inline void error(std::string text)
+    inline void error(const std::string& text)
     {
-        auto now = std::chrono::system_clock::now();
-        std::time_t t = std::chrono::system_clock::to_time_t(now);
-        std::tm* tm = std::localtime(&t);
-        char buf[6];
-        std::strftime(buf, sizeof(buf), "%H:%M", tm);
-
-        const std::string& TIME = std::string(buf);
-        std::cout << ansi::rgb_to_ansi(255, 0, 0) << "(" << TIME << ")" << "[MoonHook]: " << ansi::ColorReset() << text << std::endl;
+        std::cout << ansi::rgb_to_ansi(255, 0, 0) << "(" << get_timestamp() << ")[MoonHook]: " << ansi::ColorReset() << text << std::endl;
     }
 
     inline void printbanner()
@@ -42,27 +31,40 @@ public:
         ansi::print_gradient_ascii(banner, gmain);
     }
 
-    // too lazy to do these manually 
-    inline std::string input(std::string text)
+    inline std::string input(const std::string& text)
     {
-        std::cout << this->gmain.start << "[>>][MoonHook]: " << ansi::ColorReset() << text;
+        std::cout << gmain.start << "[>>][MoonHook]: " << ansi::ColorReset() << text;
         std::string out;
         std::getline(std::cin, out);
         return out;
     }
 
-    inline int int_input(std::string text)
+    inline int int_input(const std::string& text)
     {
-        std::cout << this->gmain.start << "[>>][MoonHook]: " << ansi::ColorReset() << text;
+        std::cout << gmain.start << "[>>][MoonHook]: " << ansi::ColorReset() << text;
         std::string txt;
         std::getline(std::cin, txt);
-        int out = 0;
+        
         try {
-            out = std::stoi(txt);
+            return std::stoi(txt);
         }
         catch (...) {
             std::cout << "Invalid number! Using 0 instead.\n";
+            return 0;
         }
-        return out;
+    }
+
+private:
+    inline std::string get_timestamp() 
+    {
+        auto now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
+        std::tm* tm = std::localtime(&t);
+        
+        char buf[6]; 
+        if (std::strftime(buf, sizeof(buf), "%H:%M", tm)) {
+            return std::string(buf);
+        }
+        return "00:00";
     }
 };
