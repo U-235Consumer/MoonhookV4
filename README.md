@@ -1,11 +1,11 @@
 <div align="center">
   <img src="./logo.png" alt="Moonhook Logo" width="150" />
 
-  # Moonhook V3
+  # Moonhook V4
 
-  [![Release](https://img.shields.io/github/v/release/U-235Consumer/MoonhookV4?t=1)](https://github.com/U-235Consumer/MoonhookV3/releases/latest)
-  [![Stars](https://img.shields.io/github/stars/U-235Consumer/MoonhookV4?t=1)](https://github.com/U-235Consumer/MoonhookV3/stargazers)
-  [![License](https://img.shields.io/github/license/U-235Consumer/MoonhookV4?t=1)](https://github.com/U-235Consumer/MoonhookV3/blob/main/LICENSE)
+  [![Release](https://img.shields.io/github/v/release/U-235Consumer/MoonhookV4?t=1)](https://github.com/U-235Consumer/MoonhookV4/releases/latest)
+  [![Stars](https://img.shields.io/github/stars/U-235Consumer/MoonhookV4?t=1)](https://github.com/U-235Consumer/MoonhookV4/stargazers)
+  [![License](https://img.shields.io/github/license/U-235Consumer/MoonhookV4?t=1)](https://github.com/U-235Consumer/MoonhookV4/blob/main/LICENSE)
 </div>
 
 Moonhook V4 is a complete rewrite of [Moonhook V3](https://github.com/U-235Consumer/MoonhookV3) in C++. It retains all of the original Discord utility and automation features while adding a **Luau plugin system** that lets you extend and add new options without touching the core codebase.
