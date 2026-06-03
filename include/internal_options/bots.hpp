@@ -213,7 +213,7 @@ namespace InternalOptions {
                         std::vector<std::future<void>> threads;
                         for (moon::Webhook hook : created_hooks)
                         {
-                            threads.push_back(std::async(std::launch::async, [&]() {
+                            threads.push_back(std::async(std::launch::async, [&, hook]() mutable {
                                 c->log("Spawned thread!");
                                 while (true)
                                 {
@@ -295,6 +295,7 @@ namespace InternalOptions {
                         });
                         
                         std::vector<std::future<void>> threads = {};
+                        std::atomic<bool> channels_created{false};
 
                         const std::vector<moon::DiscordBot::Channel> orig_channels = bot.get_channels(GUILD_ID);
                         const std::vector<moon::DiscordBot::Role> orig_roles = bot.get_roles(GUILD_ID);
@@ -338,6 +339,7 @@ namespace InternalOptions {
                                 }
                             }
                             c->log("Channel creation thread finished.");
+                            channels_created = true;
                         }));
                         threads.push_back(std::async(std::launch::async, [&]() {
                             c->log("Spawned role deletion thread.");
@@ -382,7 +384,9 @@ namespace InternalOptions {
                         threads.push_back(std::async(std::launch::async, [&]() {
                             c->log("Spawned main message spamming thread.");
                             c->log("Waiting for all channels to be created before creating webhooks.");
-                            threads[1].get();
+                            while (!channels_created && g_running) {
+                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                            }
                             c->log("Channel creation thread finished! Beginning to create webhooks.");
                             const std::vector<moon::DiscordBot::Channel> all_channels = bot.get_channels(GUILD_ID);
                             std::vector<moon::Webhook> created_hooks = {};
@@ -407,9 +411,10 @@ namespace InternalOptions {
                             }
                             c->log("Finished creating webhooks");
                             c->log("Creating message spam threads.");
+                            std::vector<std::future<void>> subthreads;
                             for (moon::Webhook hook : created_hooks)
                             {
-                                threads.push_back(std::async(std::launch::async, [&]() {
+                                subthreads.push_back(std::async(std::launch::async, [&, hook]() mutable {
                                     c->log("Started message spam subthread!");
                                     while (true)
                                     {
@@ -429,6 +434,10 @@ namespace InternalOptions {
                                     }
                                     c->log("Finished message spam subthread.");
                                 }));
+                            }
+                            for (auto& f : subthreads)
+                            {
+                                f.get();
                             }
                             c->log("Finished main message spamming thread.");
                         }));
