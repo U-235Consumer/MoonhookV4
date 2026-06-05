@@ -26,6 +26,7 @@ struct MoonhookPlugin
     };
 
     std::optional<PluginHeader> parse_plugin_header();
+    std::string strip_plugin_header();
 
 private:
     const std::string content;

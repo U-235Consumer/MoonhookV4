@@ -1,5 +1,5 @@
 // omg moonhook v4
-#define MOONHOOK_VERSION "v4.0.0"
+#define MOONHOOK_VERSION "v4.1.0"
 
 #include <iostream>
 #include <functional>

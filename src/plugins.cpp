@@ -55,7 +55,7 @@ std::string MoonhookPlugin::get_bytecode()
     options.optimizationLevel = 1;
     options.debugLevel = 1;
 
-    std::string bytecode = Luau::compile(content, options);
+    std::string bytecode = Luau::compile(strip_plugin_header(), options);
 
     if (!bytecode.empty() && bytecode[0] == '\0')
     {
@@ -118,6 +118,25 @@ std::optional<MoonhookPlugin::PluginHeader> MoonhookPlugin::parse_plugin_header(
     if (fields.count("Version"))     header.version     = fields["Version"];
 
     return header;
+}
+
+std::string MoonhookPlugin::strip_plugin_header()
+{
+    const std::string startTag = "--!plugin";
+    const std::string endTag   = "--!end";
+
+    size_t startPos = content.find(startTag);
+    if (startPos == std::string::npos) return content;
+
+    size_t endPos = content.find(endTag, startPos);
+    if (endPos == std::string::npos) return content;
+
+    size_t stripEnd = endPos + endTag.size();
+
+    if (stripEnd < content.size() && content[stripEnd] == '\n')
+        stripEnd++;
+
+    return content.substr(0, startPos) + content.substr(stripEnd);
 }
 
 namespace option_index
@@ -812,11 +831,24 @@ static int l_filesystem_makefolder(lua_State* L)
     return 0;
 }
 
+static int l_filesystem_delfolder(lua_State* L)
+{
+    const std::string& path = luaL_checkstring(L, 1);
+    bool success = SafeFilesystem::delete_directory(path);
+    if (!success)
+    {
+        luaL_error(L, ("Failed to delete folder! Error: " + SafeFilesystem::last_error).c_str());
+        return 0;
+    }
+    return 0;
+}
+
 const luaL_Reg PluginEnvironment::FilesystemLibrary[] = {
     {"readfile", l_filesystem_readfile},
     {"writefile", l_filesystem_writefile},
     {"appendfile", l_filesystem_appendfile},
     {"makefolder", l_filesystem_makefolder},
+    {"delfolder", l_filesystem_delfolder},
     {nullptr, nullptr}
 };
 
@@ -868,6 +900,12 @@ void PluginEnvironment::install(lua_State* L)
     }
 
     for (const luaL_Reg* reg = ConsoleLibrary; reg->name != nullptr; reg++)
+    {
+        lua_pushcfunction(L, reg->func);
+        lua_setfield(L, -2, reg->name);
+    }
+
+    for (const luaL_Reg* reg = FilesystemLibrary; reg-> name != nullptr; reg++)
     {
         lua_pushcfunction(L, reg->func);
         lua_setfield(L, -2, reg->name);
