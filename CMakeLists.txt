@@ -43,6 +43,7 @@ add_executable(moonhookv4
     src/bot.cpp
     src/webhook.cpp
     src/plugins.cpp
+    src/safe_fs.cpp
 )
 
 target_link_libraries(moonhookv4 PRIVATE

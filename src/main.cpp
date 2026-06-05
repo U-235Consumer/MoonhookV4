@@ -1,5 +1,5 @@
 // omg moonhook v4
-#define MOONHOOK_VERSION "v4.0.0"
+#define MOONHOOK_VERSION "v4.1.0"
 
 #include <iostream>
 #include <functional>
@@ -7,6 +7,7 @@
 #include <vector>
 #include <filesystem>
 #include <fstream>
+#include <unordered_map>
 
 #include <ansi_terminal.hpp>
 #include <consolerandom.hpp>
@@ -20,10 +21,13 @@
 #include <lualib.h>
 
 const std::filesystem::path PluginsDir = "./Plugins";
+const std::filesystem::path WorkspaceDir = PluginsDir / "Workspace";
 const std::vector<std::string> PluginExtensions = {
     ".luau", ".lua", ".luauc", ".luac"
 };
 std::vector<MoonhookPlugin> UserPlugins = {};
+
+std::vector<std::string> UserPluginNames = {};
 
 const char* LUA_blocked[] = {
     "load", "loadstring", "dofile", "loadfile",
@@ -32,7 +36,8 @@ const char* LUA_blocked[] = {
 
 int main()
 {
-    std::filesystem::create_directories(PluginsDir);
+    // std::filesystem::create_directories(PluginsDir);
+    std::filesystem::create_directories(WorkspaceDir);
 
     lua_State* L = luaL_newstate();
     luaopen_base(L);
@@ -59,7 +64,7 @@ int main()
     if (!std::filesystem::is_empty(PluginsDir))
     {
         console.log("Getting plugins...");
-    
+
         for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(PluginsDir))
         {
             std::string ext = entry.path().extension().string();
@@ -68,27 +73,23 @@ int main()
 
             int type = 0;
             if (ext == ".luauc" || ext == ".luac")
-            {
                 type = 1;
-            }
-            
+
             std::ifstream plugin_file(entry.path().string());
             if (!plugin_file.is_open())
             {
-                console.log("Failed to read plugin file: "+entry.path().string());
+                console.log("Failed to read plugin file: " + entry.path().string());
                 ansi::pause();
                 continue;
             }
             std::stringstream buff;
             buff << plugin_file.rdbuf();
             std::string content = buff.str();
-            
+
             UserPlugins.push_back(MoonhookPlugin(content, type));
-            console.log("Added plugin: "+entry.path().string());
+            console.log("Added plugin: " + entry.path().string());
         }
     }
-
-    std::vector<Option> plugin_opts = {};
 
     if (!UserPlugins.empty())
     {
@@ -98,6 +99,11 @@ int main()
 
         for (MoonhookPlugin& plugin : UserPlugins)
         {
+            auto header = plugin.parse_plugin_header();
+            std::string plugin_name = header.has_value() && !header->name.empty()
+                ? header->name
+                : "Unknown Plugin";
+
             std::string result = plugin.get_bytecode();
             if (result.empty())
             {
@@ -114,30 +120,33 @@ int main()
                 continue;
             }
 
+            PluginEnvironment::SetCurrentPluginName(plugin_name);
+
             if (lua_pcall(L, 0, 0, 0) != LUA_OK)
             {
                 console.error("Plugin runtime error: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
+                PluginEnvironment::SetCurrentPluginName("");
                 ansi::pause();
                 continue;
             }
 
-            console.log("Plugin loaded successfully.");
+            PluginEnvironment::SetCurrentPluginName("");
+            console.log("Plugin loaded successfully: " + plugin_name);
         }
 
-        plugin_opts = Registry::Get().GetOptions();
-        console.log("Loaded " + std::to_string(plugin_opts.size()) + " plugin options.");
+        console.log("Loaded " + std::to_string(Registry::Get().GetOptions().size()) + " plugin options.");
     }
 
-    while (true) 
+    while (true)
     {
         ansi::clearConsole();
         ansi::set_title("MoonHook V4");
         console.printbanner();
-        
+
         std::cout << "----------------------------------------------------------------\n";
-        std::cout << "Moonhook " << std::string(MOONHOOK_VERSION) << "!" << std::endl;
-        std::cout << ConsoleRandom::GetText() << std::endl;
+        std::cout << "Moonhook " << std::string(MOONHOOK_VERSION) << "!\n";
+        std::cout << ConsoleRandom::GetText() << "\n";
         std::cout << "----------------------------------------------------------------\n\n";
 
         std::vector<Option> main_menu_options = {
@@ -147,45 +156,62 @@ int main()
 
         for (Option& op : Registry::Get().GetOptions())
         {
-            if (op.type == 0) main_menu_options.push_back(op);
+            if (op.type == 0)
+                main_menu_options.push_back(op);
         }
 
-        for (size_t i = 0; i < main_menu_options.size(); i++)
+        int counter = 1;
+        std::cout << ansi::rgb_to_ansi(19, 195, 235) << "Internal\n" << ansi::ColorReset();
+        for (int i = 0; i < 2 && i < (int)main_menu_options.size(); i++)
         {
-            Option* o = &main_menu_options[i];
-            std::cout << "  " << std::to_string(i + 1) << ". " << o->name << std::endl;
+            std::cout << "  " << counter++ << ". " << main_menu_options[i].name << "\n";
         }
-        
-        int exit_option_num = main_menu_options.size() + 1;
-        std::cout << "  " << std::to_string(exit_option_num) << ". Exit\n";
 
-        std::cout << ansi::rgb_to_ansi(255, 255, 0) << "Select an option(1-" << exit_option_num << "): " << ansi::ColorReset();
-        
+        std::string last_group = "";
+        for (int i = 2; i < (int)main_menu_options.size(); i++)
+        {
+            const std::string& group = main_menu_options[i].plugin_name;
+            if (group != last_group)
+            {
+                std::string label = group.empty() ? "Internal" : ansi::rgb_to_ansi(19, 195, 235) + group + ansi::ColorReset();
+                std::cout << label << "\n";
+                last_group = group;
+            }
+            std::cout << "  " << counter++ << ". " << main_menu_options[i].name << "\n";
+        }
+
+        int exit_option_num = counter;
+        std::cout << ansi::rgb_to_ansi(19, 195, 235) << "Exit" << ansi::ColorReset() << std::endl;
+        std::cout << "  " << exit_option_num << ". Exit\n\n";
+
+        std::cout << ansi::rgb_to_ansi(255, 255, 0)
+                  << "Select an option (1-" << exit_option_num << "): "
+                  << ansi::ColorReset();
+
         std::string selection;
         std::getline(std::cin, selection);
-        
+
         int idx = 0;
         try {
             idx = std::stoi(selection) - 1;
-            
+
             if (idx == exit_option_num - 1)
             {
                 std::cout << "Exiting...\n";
-                return 0; 
+                break;
             }
 
             if (idx < 0 || idx >= (int)main_menu_options.size())
             {
                 console.error("Invalid selection!");
                 ansi::pause();
-                continue; 
+                continue;
             }
         }
-        catch (...)
-        {
+        catch (...) {
             console.error("Invalid selection!");
             ansi::pause();
-            continue; 
+            continue;
         }
 
         Option selected = main_menu_options[idx];
@@ -193,12 +219,10 @@ int main()
             ConsoleHelper* c = &console;
             selected.run(c);
         }
-        catch (const RestartException&)
-        {
-           
+        catch (const RestartException&) {
+
         }
-        catch (...)
-        {
+        catch (...) {
             std::cout << ansi::rgb_to_ansi(255, 0, 0) << "This option had errored!\n" << ansi::ColorReset();
             ansi::pause();
         }

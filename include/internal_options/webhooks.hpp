@@ -164,6 +164,8 @@ namespace InternalOptions {
                 }
             };
 
+            const int INTERNAL_SUB_COUNT = (int)sub_options.size();
+
             for (Option& op : Registry::Get().GetOptions())
             {
                 if (op.type == 1) sub_options.push_back(op);
@@ -177,14 +179,32 @@ namespace InternalOptions {
                 ansi::print_gradient_ascii(WebhooksBanner, console->gmain);
                 std::cout << "Webhook: " << WEBHOOK_NAME << "\n\n";
 
-                for (size_t i = 0; i < sub_options.size(); i++)
+                int counter = 1;
+                std::cout << ansi::rgb_to_ansi(19, 195, 235) << "Internal\n" << ansi::ColorReset();
+                for (int i = 0; i < INTERNAL_SUB_COUNT; i++)
                 {
-                    std::cout << "  " << (i + 1) << ". " << sub_options[i].name << "\n";
+                    std::cout << "  " << counter++ << ". " << sub_options[i].name << "\n";
                 }
-                std::cout << "  " << (sub_options.size() + 1) << ". Back\n\n";
+
+                std::string last_group = "";
+                for (int i = INTERNAL_SUB_COUNT; i < (int)sub_options.size(); i++)
+                {
+                    const std::string& group = sub_options[i].plugin_name;
+                    if (group != last_group)
+                    {
+                        std::string label = group.empty() ? "Internal" : "[" + group + "]";
+                        std::cout << ansi::rgb_to_ansi(19, 195, 235) << label << ansi::ColorReset() << "\n";
+                        last_group = group;
+                    }
+                    std::cout << "  " << counter++ << ". " << sub_options[i].name << "\n";
+                }
+
+                int back_num = counter;
+                std::cout << ansi::rgb_to_ansi(19, 195, 235) << "Back" << ansi::ColorReset() << std::endl;
+                std::cout << "  " << back_num << ". Back\n\n";
 
                 std::cout << ansi::rgb_to_ansi(255, 255, 0)
-                          << "Select an option (1-" << (sub_options.size() + 1) << "): "
+                          << "Select an option (1-" << back_num << "): "
                           << ansi::ColorReset();
 
                 std::string selection;
@@ -195,14 +215,14 @@ namespace InternalOptions {
                     idx = std::stoi(selection) - 1;
                 } catch (...) {}
 
-                if (idx < 0 || idx > (int)sub_options.size())
+                if (idx < 0 || idx >= back_num)
                 {
                     console->error("Invalid selection!");
                     ansi::pause();
                     continue;
                 }
 
-                if (idx == (int)sub_options.size())
+                if (idx == back_num - 1)
                 {
                     return;
                 }
@@ -210,7 +230,7 @@ namespace InternalOptions {
                 try {
                     sub_options[idx].run(console);
                 } catch (const RestartException&) {
-                    throw; 
+                    throw;
                 } catch (...) {
                     console->error("Option encountered an error!");
                 }

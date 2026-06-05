@@ -1,32 +1,26 @@
-// option.hpp
-
 #pragma once
 
 #include <functional>
-#include <console.hpp>
-#include <exception>
+#include <string>
 
-struct RestartException : std::exception {
-    const char* what() const noexcept override { return "restart"; }
-};
+class ConsoleHelper;
 
-struct OptionContext {
-    inline static std::string webhook_url;
-    inline static std::string bot_token;
-    inline static std::string bot_guild;
-};
+struct RestartException {};
+
+namespace OptionContext {
+    inline std::string webhook_url = "";
+    inline std::string bot_token   = "";
+    inline std::string bot_guild   = "";
+}
 
 struct Option {
     std::string name;
-    int type; // 0 - main menu, 1 - webhooks, 2 - bots
-    std::function<void(ConsoleHelper*)> action;
+    int type = 0;
+    std::function<void(ConsoleHelper*)> run;
+    std::string plugin_name = ""; 
+    int lua_callback_ref = -1;
 
-    Option(const std::string& name, int type, std::function<void(ConsoleHelper*)> action)
-        : name(name), action(action), type(type) {}
-
-    void run(ConsoleHelper* console) {
-        action(console);
-    }
-
-    int lua_callback_ref;
+    Option() = default;
+    Option(std::string name, int type, std::function<void(ConsoleHelper*)> run)
+        : name(std::move(name)), type(type), run(std::move(run)) {}
 };

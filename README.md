@@ -48,12 +48,19 @@ Plugins are written in [Luau](https://luau.org/) and have access to the global `
 | `moonhook.pause()` | Wait for the user to press Enter |
 | `moonhook.encode(table)` | Encode a Lua table to a JSON string |
 | `moonhook.decode(str)` | Decode a JSON string into a Lua table |
+| `moonhook.readfile(path)` | Reads a file's content into a string |
+| `moonhook.writefile(path, content)` | Writes content into a file |
+| `moonhook.appendfile(path, content)` | Appends text to a file |
+| `moonhook.makefolder(path)` | Creates a folder |
+| `moonhook.delfolder(path)` | Deletes a folder |
 | `moonhook.MAIN_MENU_OPTION` | Option type constant (0) — adds to the main menu |
 | `moonhook.WEBHOOKS_OPTION` | Option type constant (1) — adds to the Webhooks panel |
 | `moonhook.BOTS_OPTION` | Option type constant (2) — adds to the Bots panel |
 
 Webhook options receive a `ctx` table with `ctx.url` and `ctx.new(url)` to create a `Webhook` object.  
 Bot options receive a `ctx` table with `ctx.token`, `ctx.guild_id`, and `ctx.new(token)` to create a `Bot` object.
+
+> NOTE: all filesystem functions are restricted to work only inside of ./Plugins/Workspace
 
 **Example plugin:**
 ```lua
