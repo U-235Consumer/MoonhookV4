@@ -3,7 +3,9 @@
 #include <filesystem>
 #include <fstream>
 
-std::string& get_workspace()
+std::string SafeFilesystem::last_error = "";
+
+std::string &SafeFilesystem::get_workspace()
 {
     static std::string workspace;
     if (!workspace.empty())
@@ -73,12 +75,12 @@ bool SafeFilesystem::write(const std::string &path, const std::string &content)
         if (!outfile.is_open())
         {
             last_error = "Failed to open file!";
-            return;
+            return false;
         }
         if (is_blocked_extension(path))
         {
             last_error = "Attempted to write a file with a blocked extension!";
-            return;
+            return false;
         }
 
         outfile << content;
@@ -137,12 +139,12 @@ bool SafeFilesystem::append(const std::string &path, const std::string &content)
         if (!outfile.is_open())
         {
             last_error = "Failed to open file!";
-            return;
+            return false;
         }
         if (is_blocked_extension(path))
         {
             last_error = "Attempted to append to a file with a blocked extension!";
-            return;
+            return false;
         }
 
         outfile << content;

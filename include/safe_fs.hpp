@@ -28,5 +28,5 @@ namespace SafeFilesystem
     bool make_directories(const std::string& path);
     bool delete_directory(const std::string& path);
 
-    std::string last_error;
+    extern std::string last_error;
 }
