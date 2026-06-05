@@ -11,28 +11,13 @@
 struct MoonhookPlugin
 {
     int type = 0; // 0 - source, 1 - compiled
-    
+
     MoonhookPlugin(std::string content, int type = 0)
         : content(std::move(content)), type(type) {}
 
     std::string get_bytecode();
-    bool valid_bytecode();
-    Option get_option();
-
     std::string last_error();
 
-    /*
-    ok so it should be like err
-
-    --!plugin
-    Name: Test Plugin
-    Description: Plugin description or sum
-    Author: Me
-    Version: v0.1.0
-    --!end
-
-    put it in the start of the file or somewhere yes
-    */
     struct PluginHeader {
         std::string name;
         std::string description;
@@ -52,5 +37,8 @@ namespace PluginEnvironment
 {
     extern const luaL_Reg MoonhookLibrary[];
     extern const luaL_Reg ConsoleLibrary[];
+    extern const luaL_Reg FilesystemLibrary[];
+
     void install(lua_State* L);
-};
+    void SetCurrentPluginName(const std::string& name);
+}

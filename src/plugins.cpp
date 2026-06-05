@@ -5,6 +5,8 @@
 #include <pluginregistry.hpp>
 #include <option.hpp>
 #include <ansi_terminal.hpp>
+#include <console.hpp>
+#include <safe_fs.hpp>
 
 #include <lua.h>
 #include <lualib.h>
@@ -33,6 +35,13 @@ ConsoleHelper chelper(ansi::Gradient {
     ansi::rgb_to_ansi(19, 195, 235),
     ansi::rgb_to_ansi(19, 170, 235)
 }, "");
+
+static std::string g_current_plugin_name = "";
+
+void PluginEnvironment::SetCurrentPluginName(const std::string& name)
+{
+    g_current_plugin_name = name;
+}
 
 std::string MoonhookPlugin::get_bytecode()
 {
@@ -66,13 +75,13 @@ std::string MoonhookPlugin::last_error()
 std::optional<MoonhookPlugin::PluginHeader> MoonhookPlugin::parse_plugin_header()
 {
     const std::string start_tag = "--!plugin";
-    const std::string end_tag = "--!end";
+    const std::string end_tag   = "--!end";
 
     std::size_t start_pos = content.find(start_tag);
     if (start_pos == std::string::npos) return std::nullopt;
 
     std::size_t block_start = start_pos + start_tag.size();
-    std::size_t end_pos = content.find(end_tag);
+    std::size_t end_pos     = content.find(end_tag);
     if (end_pos == std::string::npos) return std::nullopt;
 
     std::string block = content.substr(block_start, end_pos - block_start);
@@ -84,9 +93,9 @@ std::optional<MoonhookPlugin::PluginHeader> MoonhookPlugin::parse_plugin_header(
     while (std::getline(stream, line))
     {
         std::size_t colon = line.find(':');
-        if (colon = std::string::npos) continue;
+        if (colon == std::string::npos) continue; // was = before, bug fixed
 
-        std::string key = line.substr(0, colon);
+        std::string key   = line.substr(0, colon);
         std::string value = line.substr(colon + 1);
 
         auto trim = [](std::string& s) {
@@ -103,10 +112,10 @@ std::optional<MoonhookPlugin::PluginHeader> MoonhookPlugin::parse_plugin_header(
     }
 
     PluginHeader header;
-    if (fields.count("Name")) header.name = fields["Name"];
+    if (fields.count("Name"))        header.name        = fields["Name"];
     if (fields.count("Description")) header.description = fields["Description"];
-    if (fields.count("Author")) header.author = fields["Author"];
-    if (fields.count("Version")) header.version = fields["Version"];
+    if (fields.count("Author"))      header.author      = fields["Author"];
+    if (fields.count("Version"))     header.version     = fields["Version"];
 
     return header;
 }
@@ -204,16 +213,16 @@ static int l_webhook_delete_webhook(lua_State* L) {
 }
 
 static const luaL_Reg webhook_methods[] = {
-    {"send", l_webhook_send},
-    {"set_proxy", l_webhook_set_proxy},
-    {"get_proxy", l_webhook_get_proxy},
-    {"last_error", l_webhook_last_error},
-    {"retry_after_ms", l_webhook_retry_after_ms},
-    {"set_name", l_webhook_set_name},
+    {"send",                l_webhook_send},
+    {"set_proxy",           l_webhook_set_proxy},
+    {"get_proxy",           l_webhook_get_proxy},
+    {"last_error",          l_webhook_last_error},
+    {"retry_after_ms",      l_webhook_retry_after_ms},
+    {"set_name",            l_webhook_set_name},
     {"set_avatar_from_url", l_webhook_set_avatar_from_url},
-    {"set_avatar_from_file", l_webhook_set_avatar_from_file},
-    {"get_name", l_webhook_get_name},
-    {"delete_webhook", l_webhook_delete_webhook},
+    {"set_avatar_from_file",l_webhook_set_avatar_from_file},
+    {"get_name",            l_webhook_get_name},
+    {"delete_webhook",      l_webhook_delete_webhook},
     {nullptr, nullptr}
 };
 
@@ -249,9 +258,9 @@ static int l_bot_get_channels(lua_State* L) {
     for (const auto& c : channels) {
         lua_pushinteger(L, i++);
         lua_newtable(L);
-        lua_pushstring(L, c.id.c_str()); lua_setfield(L, -2, "id");
+        lua_pushstring(L, c.id.c_str());   lua_setfield(L, -2, "id");
         lua_pushstring(L, c.name.c_str()); lua_setfield(L, -2, "name");
-        lua_pushinteger(L, c.type); lua_setfield(L, -2, "type");
+        lua_pushinteger(L, c.type);        lua_setfield(L, -2, "type");
         lua_settable(L, -3);
     }
     return 1;
@@ -279,7 +288,7 @@ static int l_bot_get_roles(lua_State* L) {
     for (const auto& r : roles) {
         lua_pushinteger(L, i++);
         lua_newtable(L);
-        lua_pushstring(L, r.id.c_str()); lua_setfield(L, -2, "id");
+        lua_pushstring(L, r.id.c_str());   lua_setfield(L, -2, "id");
         lua_pushstring(L, r.name.c_str()); lua_setfield(L, -2, "name");
         lua_settable(L, -3);
     }
@@ -308,10 +317,10 @@ static int l_bot_get_members(lua_State* L) {
     for (const auto& m : members) {
         lua_pushinteger(L, i++);
         lua_newtable(L);
-        lua_pushstring(L, m.user_id.c_str()); lua_setfield(L, -2, "user_id");
-        lua_pushstring(L, m.username.c_str()); lua_setfield(L, -2, "username");
-        lua_pushstring(L, m.discriminator.c_str()); lua_setfield(L, -2, "discriminator");
-        lua_pushboolean(L, m.is_owner); lua_setfield(L, -2, "is_owner");
+        lua_pushstring(L, m.user_id.c_str());       lua_setfield(L, -2, "user_id");
+        lua_pushstring(L, m.username.c_str());       lua_setfield(L, -2, "username");
+        lua_pushstring(L, m.discriminator.c_str());  lua_setfield(L, -2, "discriminator");
+        lua_pushboolean(L, m.is_owner);              lua_setfield(L, -2, "is_owner");
         lua_settable(L, -3);
     }
     return 1;
@@ -328,7 +337,7 @@ static int l_bot_create_webhook(lua_State* L) {
     moon::DiscordBot* bot = check_bot(L, 1);
     auto wh = bot->create_webhook(luaL_checkstring(L, 2), luaL_checkstring(L, 3));
     lua_newtable(L);
-    lua_pushstring(L, wh.id.c_str()); lua_setfield(L, -2, "id");
+    lua_pushstring(L, wh.id.c_str());    lua_setfield(L, -2, "id");
     lua_pushstring(L, wh.token.c_str()); lua_setfield(L, -2, "token");
     lua_pushstring(L, wh.url().c_str()); lua_setfield(L, -2, "url");
     return 1;
@@ -341,17 +350,17 @@ static int l_bot_last_error(lua_State* L) {
 }
 
 static const luaL_Reg bot_methods[] = {
-    {"validate_guild", l_bot_validate_guild},
-    {"get_channels", l_bot_get_channels},
-    {"delete_channel", l_bot_delete_channel},
+    {"validate_guild",      l_bot_validate_guild},
+    {"get_channels",        l_bot_get_channels},
+    {"delete_channel",      l_bot_delete_channel},
     {"create_text_channel", l_bot_create_text_channel},
-    {"get_roles", l_bot_get_roles},
-    {"delete_role", l_bot_delete_role},
-    {"create_role", l_bot_create_role},
-    {"get_members", l_bot_get_members},
-    {"ban_member", l_bot_ban_member},
-    {"create_webhook", l_bot_create_webhook},
-    {"last_error", l_bot_last_error},
+    {"get_roles",           l_bot_get_roles},
+    {"delete_role",         l_bot_delete_role},
+    {"create_role",         l_bot_create_role},
+    {"get_members",         l_bot_get_members},
+    {"ban_member",          l_bot_ban_member},
+    {"create_webhook",      l_bot_create_webhook},
+    {"last_error",          l_bot_last_error},
     {nullptr, nullptr}
 };
 
@@ -393,6 +402,7 @@ static int l_moonhook_option(lua_State* L)
         }
     });
 
+    opt.plugin_name      = g_current_plugin_name;
     opt.lua_callback_ref = ref;
     Registry::Get().AddOption(std::move(opt));
     return 0;
@@ -416,22 +426,16 @@ static json lua_to_json(lua_State* L, int index)
                 json new_j = json::object();
                 int idx = 0;
                 for (auto& item : j)
-                {
                     new_j[std::to_string(idx++)] = item;
-                }
                 j = std::move(new_j);
             }
             is_array = false;
             std::string key = lua_tostring(L, -2);
 
-            if (lua_isstring(L, -1))
-                j[key] = lua_tostring(L, -1);
-            else if (lua_isnumber(L, -1))
-                j[key] = lua_tonumber(L, -1);
-            else if (lua_isboolean(L, -1))
-                j[key] = (bool)lua_toboolean(L, -1);
-            else if (lua_istable(L, -1))
-                j[key] = lua_to_json(L, lua_gettop(L));
+            if (lua_isstring(L, -1))       j[key] = lua_tostring(L, -1);
+            else if (lua_isnumber(L, -1))  j[key] = lua_tonumber(L, -1);
+            else if (lua_isboolean(L, -1)) j[key] = (bool)lua_toboolean(L, -1);
+            else if (lua_istable(L, -1))   j[key] = lua_to_json(L, lua_gettop(L));
         }
         else if (lua_type(L, -2) == LUA_TNUMBER)
         {
@@ -440,27 +444,19 @@ static json lua_to_json(lua_State* L, int index)
                 int idx = (int)lua_tonumber(L, -2) - 1;
                 if (idx < 0) idx = 0;
 
-                if (lua_isstring(L, -1))
-                    j[idx] = lua_tostring(L, -1);
-                else if (lua_isnumber(L, -1))
-                    j[idx] = lua_tonumber(L, -1);
-                else if (lua_isboolean(L, -1))
-                    j[idx] = (bool)lua_toboolean(L, -1);
-                else if (lua_istable(L, -1))
-                    j[idx] = lua_to_json(L, lua_gettop(L));
+                if (lua_isstring(L, -1))       j[idx] = lua_tostring(L, -1);
+                else if (lua_isnumber(L, -1))  j[idx] = lua_tonumber(L, -1);
+                else if (lua_isboolean(L, -1)) j[idx] = (bool)lua_toboolean(L, -1);
+                else if (lua_istable(L, -1))   j[idx] = lua_to_json(L, lua_gettop(L));
             }
             else
             {
                 std::string key = std::to_string((int)lua_tonumber(L, -2));
 
-                if (lua_isstring(L, -1))
-                    j[key] = lua_tostring(L, -1);
-                else if (lua_isnumber(L, -1))
-                    j[key] = lua_tonumber(L, -1);
-                else if (lua_isboolean(L, -1))
-                    j[key] = (bool)lua_toboolean(L, -1);
-                else if (lua_istable(L, -1))
-                    j[key] = lua_to_json(L, lua_gettop(L));
+                if (lua_isstring(L, -1))       j[key] = lua_tostring(L, -1);
+                else if (lua_isnumber(L, -1))  j[key] = lua_tonumber(L, -1);
+                else if (lua_isboolean(L, -1)) j[key] = (bool)lua_toboolean(L, -1);
+                else if (lua_istable(L, -1))   j[key] = lua_to_json(L, lua_gettop(L));
             }
         }
 
@@ -488,16 +484,11 @@ static void json_to_lua(lua_State* L, const json& j)
         {
             lua_pushstring(L, key.c_str());
 
-            if (value.is_string())
-                lua_pushstring(L, value.get<std::string>().c_str());
-            else if (value.is_number())
-                lua_pushnumber(L, value.get<double>());
-            else if (value.is_boolean())
-                lua_pushboolean(L, value.get<bool>());
-            else if (value.is_object() || value.is_array())
-                json_to_lua(L, value);
-            else
-                lua_pushnil(L);
+            if (value.is_string())                   lua_pushstring(L, value.get<std::string>().c_str());
+            else if (value.is_number())               lua_pushnumber(L, value.get<double>());
+            else if (value.is_boolean())              lua_pushboolean(L, value.get<bool>());
+            else if (value.is_object() || value.is_array()) json_to_lua(L, value);
+            else                                      lua_pushnil(L);
 
             lua_settable(L, -3);
         }
@@ -510,16 +501,11 @@ static void json_to_lua(lua_State* L, const json& j)
         {
             lua_pushinteger(L, i++);
 
-            if (v.is_string())
-                lua_pushstring(L, v.get<std::string>().c_str());
-            else if (v.is_number())
-                lua_pushnumber(L, v.get<double>());
-            else if (v.is_boolean())
-                lua_pushboolean(L, v.get<bool>());
-            else if (v.is_object() || v.is_array())
-                json_to_lua(L, v);
-            else
-                lua_pushnil(L);
+            if (v.is_string())                   lua_pushstring(L, v.get<std::string>().c_str());
+            else if (v.is_number())               lua_pushnumber(L, v.get<double>());
+            else if (v.is_boolean())              lua_pushboolean(L, v.get<bool>());
+            else if (v.is_object() || v.is_array()) json_to_lua(L, v);
+            else                                  lua_pushnil(L);
 
             lua_settable(L, -3);
         }
@@ -534,14 +520,12 @@ static int l_json_decode(lua_State* L)
 {
     const char* str = luaL_checkstring(L, 1);
     json j;
-
     try {
         j = json::parse(str);
     } catch (...) {
         lua_pushnil(L);
         return 1;
     }
-
     json_to_lua(L, j);
     return 1;
 }
@@ -566,10 +550,8 @@ static size_t curl_header_cb(char* buffer, size_t size, size_t nitems, std::map<
     {
         std::string key   = line.substr(0, colon);
         std::string value = line.substr(colon + 1);
-
         if (!value.empty() && value.front() == ' ')
             value.erase(value.begin());
-
         (*headers)[key] = value;
     }
 
@@ -625,7 +607,7 @@ static int l_moonhook_request(lua_State* L)
     std::map<std::string, std::string> response_headers;
     long status_code = 0;
 
-    curl_easy_setopt(curl, CURLOPT_URL,           url.c_str());
+    curl_easy_setopt(curl, CURLOPT_URL,            url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,  curl_write_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA,      &response_body);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, curl_header_cb);
@@ -779,6 +761,65 @@ static int l_console_pause(lua_State* L)
     return 0;
 }
 
+static int l_filesystem_readfile(lua_State* L)
+{
+    const std::string& path = luaL_checkstring(L, 1);
+    std::string output = SafeFilesystem::read(path);
+    if (output == "ERROR")
+    {
+        luaL_error(L, ("Failed to open file! Error: " + SafeFilesystem::last_error).c_str());
+        return 0;
+    }
+    lua_pushstring(L, output.c_str());
+    return 1;
+}
+
+static int l_filesystem_writefile(lua_State* L)
+{
+    const std::string& path = luaL_checkstring(L, 1);
+    const std::string& content = luaL_checkstring(L, 2);
+    bool success = SafeFilesystem::write(path, content);
+    if (!success)
+    {
+        luaL_error(L, ("Failed to write to file! Error: " + SafeFilesystem::last_error).c_str());
+        return 0;
+    }
+    return 0;
+}
+
+static int l_filesystem_appendfile(lua_State* L)
+{
+    const std::string& path = luaL_checkstring(L, 1);
+    const std::string& content = luaL_checkstring(L, 2);
+    bool success = SafeFilesystem::append(path, content);
+    if (!success)
+    {
+        luaL_error(L, ("Failed to append to file! Error: " + SafeFilesystem::last_error).c_str());
+        return 0;
+    }
+    return 0;
+}
+
+static int l_filesystem_makefolder(lua_State* L)
+{
+    const std::string& path = luaL_checkstring(L, 1);
+    bool success = SafeFilesystem::make_directories(path);
+    if (!success)
+    {
+        luaL_error(L, ("Failed to create folder! Error: " + SafeFilesystem::last_error).c_str());
+        return 0;
+    }
+    return 0;
+}
+
+const luaL_Reg PluginEnvironment::FilesystemLibrary[] = {
+    {"readfile", l_filesystem_readfile},
+    {"writefile", l_filesystem_writefile},
+    {"appendfile", l_filesystem_appendfile},
+    {"makefolder", l_filesystem_makefolder},
+    {nullptr, nullptr}
+};
+
 const luaL_Reg PluginEnvironment::MoonhookLibrary[] = {
     {"Option",  l_moonhook_option},
     {"Request", l_moonhook_request},
@@ -786,15 +827,15 @@ const luaL_Reg PluginEnvironment::MoonhookLibrary[] = {
 };
 
 const luaL_Reg PluginEnvironment::ConsoleLibrary[] = {
-    {"log",          l_console_log},
-    {"error",        l_console_error},
-    {"input",        l_console_input},
-    {"int_input",    l_console_int_input},
-    {"printbanner",  l_console_printbanner},
-    {"setcolors",    l_console_setcolors},
-    {"setbanner",    l_console_setbanner},
-    {"wait",         l_console_wait},
-    {"pause",        l_console_pause},
+    {"log",         l_console_log},
+    {"error",       l_console_error},
+    {"input",       l_console_input},
+    {"int_input",   l_console_int_input},
+    {"printbanner", l_console_printbanner},
+    {"setcolors",   l_console_setcolors},
+    {"setbanner",   l_console_setbanner},
+    {"wait",        l_console_wait},
+    {"pause",       l_console_pause},
     {nullptr, nullptr}
 };
 
