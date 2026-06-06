@@ -8,7 +8,7 @@
   [![License](https://img.shields.io/github/license/U-235Consumer/MoonhookV4)](https://github.com/U-235Consumer/MoonhookV4/blob/main/LICENSE)
 </div>
 
-This is the source code for **Moonhook V4**'s documentation, created with **Zensical**.
+This is the source for **Moonhook V4**'s documentation, created with **Zensical**.
 Last updated for version: `v4.1.0`
 
 > NOTE: I may forget to update the readme.md of this after updating docs because i'm stupid 😭
