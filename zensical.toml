@@ -2,6 +2,7 @@
 site_name = "Moonhook V4 - Docs"
 site_description = "Documentation for Moonhook V4."
 site_author = "Seal Softworks"
+site_url = "https://seal-softworks.github.io/moonhook"
 copyright = "&copy; 2026 Seal Softworks"
 docs_dir = "docs"
 site_dir = "site"
